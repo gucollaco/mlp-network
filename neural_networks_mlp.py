@@ -188,61 +188,61 @@ def train_network(inputs, n_hidden_perceptron, weights, answers, learning_rate):
                 #print(weights)
             #w_index = 0
             #p_index = 0
-            '''elif j == 0:
-                for k in range(n_hidden_perceptron[m]):
-                    y = n_hidden_perceptron[m+1]
-                    for l in range(n_hidden_perceptron[m+1]):
-                        
-                    delta[p_index] = activation_derivative(perceptron_sums[p_index]) * 
-                        weights[w_index] = weights[w_index] + learning_rate * perceptron_sums_activated[p_index] * delta[p_index]
-                        w_index += 1
-                    perceptron_sums[p_index] = p_sum
-                    perceptron_sums_activated[p_index] = activation(p_sum)
-                    p_index += 1
-                    #print('1', activation(p_sum))
-                    #print('1', p_index)
-                    p_sum = 0'''
-                
-                        
-                
-        '''for m in range(layers):
-            e_sum = 0
-            if m == (layers-1):
-                z = n_hidden_perceptron[m]
-                v = n_hidden_perceptron[m] * len(answers[i])
-                for k in range(n_hidden_perceptron[m]):
-                    v = n_hidden_perceptron[m] * len(answers[i])
-                    for l in range(len(answers[i])):
-                        e_sum += delta[p_index-y][0] * weights[v-1][0]
-                        y -= 1
-                        v += n_hidden_perceptron[m]
-                    #weights[w_index-len(answers[i])-z] = perceptron_sums_activated[p_index] * e_sum
-                    z += 1
-                    p_index -= 1
-                    w_index -= len(answers[i])
-                    #print('1', activation(p_sum))
-                    #print('1', p_index)
-                    p_sum = 0
-            else:
-                for k in range(n_hidden_perceptron[m]):
-                    y = n_hidden_perceptron[m+1]
-                    for l in range(n_hidden_perceptron[m+1]):
-                        p_sum += perceptron_sums[p_index-y][0] * weights[w_index][0]
-                        y -= 1
-                        w_index += 1
-                    perceptron_sums[p_index] = p_sum
-                    perceptron_sums_activated[p_index] = activation(p_sum)
-                    p_index += 1
-                    #print('1', activation(p_sum))
-                    #print('1', p_index)
-                    p_sum = 0'''
+            elif m == 0:
+                delta_index = 0
+                delta_index_update = 0
+                update_weight_index = 0
+                # calculate the index of the first perceptron to iterate
+                f = 0
+                for z in n_hidden_perceptron:
+                    f += z
+                f -= n_hidden_perceptron[m]
+                f += len(answers[0])
+                # calculate the amount of weights from the next layers (including the output), to find the correct index
+                for idx, val in enumerate(n_hidden_perceptron):
+                    if(idx == 0): i_index = val * len(inputs[i])
                     
-        #print(w_index)
+                count = 0
+                for k in range(n_hidden_perceptron[m]):                    
+                    z = p_index - f
+                    #print(z)
+                    i_index_restart = i_index + count
+                    print('--------------')
+                    for l in range(n_hidden_perceptron[m+1]):
+                        print('index weight:', i_index_restart)
+                        
+                        e_sum += weights[i_index_restart] * delta[z]
+                        print('perceptron:', z)
+                        z += 1
+                        i_index_restart += n_hidden_perceptron[m]
+                        
+                        
+                    delta[delta_index] = activation_derivative(perceptron_sums[delta_index]) * e_sum
+                    count += 1
+                    delta_index += 1
+                    print(k+1, ' finished')
+                    print('--------------')
+                    
+                    #update weights
+                    for o in range(len(inputs[i])):
+                        weights[update_weight_index] = weights[update_weight_index] + learning_rate * perceptron_sums_activated[delta_index_update] * delta[delta_index_update]
+                        
+                        print('weight index update:', update_weight_index)
+                        update_weight_index += 1
+                    print('perceptron updated:', delta_index_update, '/10')
+                    delta_index_update += 1
+            #else:
+                        
+         
+        print('w index', w_index)
+        print('p_index', p_index)       
+        
+        print(weights)
         #print()
 
 if __name__ == "__main__":
-    n_hidden_perceptron=[4,4]
-    learning_rate=0.1
+    n_hidden_perceptron = [4,4]
+    learning_rate = 0.1
     
     values, weights, answers = dataset(n_hidden_perceptron)
     train_network(values, n_hidden_perceptron, weights, answers, learning_rate)
