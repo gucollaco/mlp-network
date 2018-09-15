@@ -67,6 +67,7 @@ def dataset(n_hidden_perceptron):
             weights_matrix += n_hidden_perceptron[i] * (n_hidden_perceptron[i-1]+1)
 
     # weight matrix creation
+    np.random.seed(30)
     weights = np.random.uniform(low=0.0, high=0.1, size=(weights_matrix, 1))
     
     # print matrices
@@ -78,7 +79,7 @@ def dataset(n_hidden_perceptron):
     return values, weights, answers
 
 # train network function
-def train_network(inputs, validation_inputs, n_hidden_perceptron, weights, answers, learning_rate, min_error, momentum_term):
+def train_network(inputs, test_inputs, n_hidden_perceptron, weights, answers, learning_rate, min_error, momentum_term, n_epochs):
     # getting the amount of perceptrons and storing in 'p'
     p = 0
     for z in n_hidden_perceptron:
@@ -88,41 +89,42 @@ def train_network(inputs, validation_inputs, n_hidden_perceptron, weights, answe
     # matrix to keep the perceptron sum values for each perceptron
     perceptron_sums = np.zeros((p, 1))
     perceptron_sums_activated = np.zeros((p, 1))
+    perceptron_sums_test = np.zeros((p, 1))
+    perceptron_sums_activated_test = np.zeros((p, 1))
 
     # matrix to keep the delta values for each perceptron
     delta = np.zeros((p, 1))
+    delta_test = np.zeros((p, 1))
     
-    # acceptable error
-    error = 1
-    
-    # index of epoch
-    #epoch = 0
-    
-    # values to plot
+    # variable to keep the errors' value
+    error = 0
+
+    # keep the epochs
     epochs = []
+    
+    # keep the errors
     error_per_input = []
     error_train = []
+    error_per_input_test = []
     error_test = []
-    n_epochs = 50
     
-    # while error still not good enough
-    #while (error > min_error) :
+    # amount of epochs
     for epoch in range(n_epochs):
         
-    # iterating through all inputs
+        # iterating through training inputs
         for i in range(len(inputs)):
             w_index = 0
             p_index = 0
             layers = len(n_hidden_perceptron)
-    
+
             # get the output, and calculate the error
             for j in range(layers+1):
                 p_sum = 0
-    
+
                 # checking if it is the first hidden layer
                 if j == 0:
                     for k in range(n_hidden_perceptron[j]):
-    
+
                         # iterate through the inputs layer
                         for l in range(len(inputs[i])+1):
                             # checking if it is a bias
@@ -132,13 +134,13 @@ def train_network(inputs, validation_inputs, n_hidden_perceptron, weights, answe
                             else:
                                 p_sum += inputs[i][l] * weights[w_index][0]
                                 w_index += 1
-    
+
                         # storing p_sum
                         perceptron_sums[p_index] = p_sum
                         perceptron_sums_activated[p_index] = activation(p_sum)
                         delta[p_index] = 0
                         p_index += 1
-    
+
                         # resetting p_sum
                         p_sum = 0
     
@@ -365,10 +367,11 @@ def train_network(inputs, validation_inputs, n_hidden_perceptron, weights, answe
                         
                     
             
-            error_per_input.append(sum(np.abs(delta[(-1)*len(answers[i]):]))/len(answers[i]))
-            #print(sum(np.abs(delta[len(delta)-len(answers[i]):]))/len(answers[i]))
-            #error.append(np.median(np.absolute(erros[n_camadas-1])))
-        
+            #error_per_input.append(sum(np.abs(delta[(-1)*len(answers[i]):]))/len(answers[i]))
+            
+            # mean squared error
+            error_per_input.append(sum(np.square(delta[(-1)*len(answers[i]):]))/len(answers[i]))
+            
         error = np.mean(error_per_input)
         error_train.append(error)
         
@@ -376,13 +379,112 @@ def train_network(inputs, validation_inputs, n_hidden_perceptron, weights, answe
         epochs.append(e)
         
         print('ERROR', error)
-        print('EPOCH', e)
-            
+        #print('EPOCH', e)
 
-    #    print()
-    #print('ERROR', np.mean(np.abs(delta)))
-    #print('DELTA', np.abs(delta))
+#-------------------------------------------------------------------------------------------------------------------
+
+        # iterating through test inputs  
+        for i in range(len(test_inputs)):
+            w_index = 0
+            p_index = 0
+            layers = len(n_hidden_perceptron)
+            
+            # get the output, and calculate the error
+            for j in range(layers+1):
+                p_sum = 0
+
+                # checking if it is the first hidden layer
+                if j == 0:
+                    for k in range(n_hidden_perceptron[j]):
+
+                        # iterate through the inputs layer
+                        for l in range(len(inputs[i])+1):
+                            # checking if it is a bias
+                            if l == len(inputs[i]):
+                                p_sum += 1 * weights[w_index][0]
+                                w_index += 1
+                            else:
+                                p_sum += inputs[i][l] * weights[w_index][0]
+                                w_index += 1
+
+                        # storing p_sum
+                        perceptron_sums_test[p_index] = p_sum
+                        perceptron_sums_activated_test[p_index] = activation(p_sum)
+                        delta_test[p_index] = 0
+                        p_index += 1
+
+                        # resetting p_sum
+                        p_sum = 0
+    
+                # checking if it is the output layer
+                elif j == layers:
+                    #print('input number ', i)
+                    for k in range(len(answers[i])):
+                        y = n_hidden_perceptron[j-1]
+    
+                        # iterate through the last hidden layer
+                        for l in range(n_hidden_perceptron[j-1]+1):
+                            # checking if it is a bias
+                            if l == n_hidden_perceptron[j-1]:
+                                p_sum += 1 * weights[w_index][0]
+                                w_index += 1
+                            else:
+                                p_sum += perceptron_sums_test[p_index-y][0] * weights[w_index][0]
+                                y -= 1
+                                w_index += 1
+    
+                        # storing p_sum
+                        perceptron_sums_test[p_index] = p_sum
+                        perceptron_sums_activated_test[p_index] = activation(p_sum)
+    
+                         # storing delta (on output layer first)
+                        delta_test[p_index] = (answers[i][k] - activation(p_sum)) * activation_derivative(p_sum)
+                        p_index += 1
+                        
+                        # resetting p_sum
+                        p_sum = 0
+    
+                # checking if it is a middle hidden layer (or last)
+                else:
+                    for k in range(n_hidden_perceptron[j]):
+                        y = n_hidden_perceptron[j-1]
+    
+                        # iterate through the hidden layer before this one
+                        for l in range(n_hidden_perceptron[j-1]+1):
+                            # checking if it is a bias
+                            if l == n_hidden_perceptron[j-1]:
+                                p_sum += 1 * weights[w_index][0]
+                                w_index += 1
+                            else:
+                                p_sum += perceptron_sums_test[p_index-y][0] * weights[w_index][0]
+                                y -= 1
+                                w_index += 1
+    
+                        # storing p_sum
+                        perceptron_sums_test[p_index] = p_sum
+                        perceptron_sums_activated_test[p_index] = activation(p_sum)
+                        delta_test[p_index] = 0
+                        p_index += 1
+    
+                        # resetting p_sum
+                        p_sum = 0
+                        
+            # mean squared error
+            error_per_input_test.append(sum(np.square(delta_test[(-1)*len(answers[i]):]))/len(answers[i]))
+
+        error = np.mean(error_per_input_test)
+        error_test.append(error)
+        
+        print('ERROR TEST', error)
+        print('EPOCH', e)
+        
+    print(delta_test)
+    print(delta)
+    # plotting arrays
     plt.plot(epochs, error_train, label='training')
+    plt.plot(epochs, error_test, label='test')
+    plt.legend()
+    #plt.plot(epocas, acur, label='acuracia')
     plt.show()
 
 # main function
@@ -392,6 +494,7 @@ if __name__ == "__main__":
     learning_rate = 0.1
     momentum_term = 0.3
     min_error = 0.01
+    n_epochs = 100
 
     # returning values, weights, answers from the dataset function
     values, weights, answers = dataset(n_hidden_perceptron)
@@ -401,4 +504,4 @@ if __name__ == "__main__":
     #training_set, validation_set, test_set = split_test_validation(values)
 
     # training the neural network with the parameters sent
-    train_network(training_set, test_set, n_hidden_perceptron, weights, answers, learning_rate, min_error, momentum_term)
+    train_network(training_set, test_set, n_hidden_perceptron, weights, answers, learning_rate, min_error, momentum_term, n_epochs)
