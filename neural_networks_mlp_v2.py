@@ -110,7 +110,11 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
                     # for each perceptron on the current layer
                     for l in range(layers[k]):
                         perceptron_sums_active[k].append(activation(np.dot(perceptron_sums_active[k-1], weights[k][l]))) # last layer's perceptron sum X weights
-
+                        
+                        if(k==(n_layers-1)):
+                            error_output = answers[i][l] - perceptron_sums_active[k][l]
+                            error_output_train.append(error_output)
+                        
                     if(k!=(n_layers-1)): perceptron_sums_active[k].append(1) # bias
                     
             # updating the weights
@@ -120,11 +124,8 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
                     # per perceptron
                     for l in range(layers[k]):
                         
-                        error_output = answers[i][l] - perceptron_sums_active[k][l]
-                        error_output_train.append(error_output)
-                        
                         # append to deltas array
-                        deltas[k].append(error_output * activation_derivative(perceptron_sums_active[k][l]))
+                        deltas[k].append((answers[i][l] - perceptron_sums_active[k][l]) * activation_derivative(perceptron_sums_active[k][l]))
 
                         # update weights matrix
                         #for m in range(len(weights[k][l])):
