@@ -5,7 +5,7 @@ Created on Wed Aug 22 10:56:26 2018
 @author: gustavo.collaco
 """
 
-import math
+import copy
 import random
 import pandas as pd
 import numpy as np
@@ -22,8 +22,18 @@ def activation_derivative(y):
     #return math.exp(-y) / (1.0 + math.exp(-y))**2
 
 # momentum function
-def momentum(learning, alfa, weight_diff):
-    return learning + alfa * weight_diff
+def momentum(alfa, weight_diff):
+    return alfa * weight_diff
+
+# accuracy function
+def accuracy(output, expected_output):
+    output = [np.argmax(i) for i in output]
+    expected_output = [np.argmax(i) for i in expected_output]
+    
+    accuracy = [1 if output[i] == expected_output[i] else 0 for i in range(len(output))]
+    accuracy = sum(accuracy)/float(len(accuracy))
+
+    return accuracy
 
 # dataset preparation function
 def dataset(layers):
@@ -58,15 +68,15 @@ def dataset(layers):
     weights = np.array(weights)
 
     # print matrices
-    print(values)
+    #print(values)
     print(weights)
-    print(answers)
+    #print(answers)
 
     # returning inputs, weights, outputs and layers
     return values, weights, answers, layers
 
 # adjust the weights
-def train_network(inputs, answers, inputs_test, answers_test, weights, layers, learning_rate=0.2, momentum_term=0.3, n_epochs=50, acceptable_error=0.1):
+def train_network(inputs, answers, inputs_test, answers_test, weights, layers, learning_rate=0.2, momentum_term=0.7, n_epochs=50, acceptable_error=0.1):
     n_inputs = len(inputs)
     n_inputs_test = len(inputs_test)
     n_layers = len(layers)
@@ -76,9 +86,13 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
     
     error_train = []
     error_test = []
+    accu = []
     
     e = 1
-
+    
+    # keep t-1 weight values
+    weights_old = copy.deepcopy(weights)
+    
     # iterate while error is too high
     while(e > acceptable_error):
     #for epoch in range(n_epochs):
@@ -122,14 +136,9 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
                 # output layer
                 if(k==(n_layers-1)):
                     # per perceptron
-                    for l in range(layers[k]):
-                        
+                    for l in range(layers[k]):                        
                         # append to deltas array
                         deltas[k].append((answers[i][l] - perceptron_sums_active[k][l]) * activation_derivative(perceptron_sums_active[k][l]))
-
-                        # update weights matrix
-                        #for m in range(len(weights[k][l])):
-                        #    weights[k][l][m] = weights[k][l][m] + (learning_rate * perceptron_sums_active[k-1][m] * deltas[k][l])
 
                 # first hidden
                 elif(k==0):
@@ -141,10 +150,6 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
                         # append to deltas array
                         deltas[k].append(activation_derivative(perceptron_sums_active[k][l]) * err_sum)
 
-                        # update weights matrix
-                        #for m in range(len(weights[k][l])):
-                        #    weights[k][l][m] = weights[k][l][m] + (learning_rate * inputs[i][m] * deltas[k][l])
-
                 # other hiddens
                 else:
                     for l in range(layers[k]):
@@ -154,11 +159,6 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
 
                         # append to deltas array
                         deltas[k].append(activation_derivative(perceptron_sums_active[k][l]) * err_sum)
-
-                        # update weights matrix
-                        #for m in range(len(weights[k][l])):
-                        #    weights[k][l][m] = weights[k][l][m] + (learning_rate * perceptron_sums_active[k-1][m] * deltas[k][l])
-
             
             error_mean_sqr = np.mean([e**2 for e in error_output_train])
             
@@ -169,12 +169,21 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
                     for l in range(layers[k]):
                         if(k == 0):
                             for m in range(len(weights[k][l])):
-                                weights[k][l][m] = weights[k][l][m] + (learning_rate * inputs[i][m] * deltas[k][l])
+                                if(i == 0 and e == 0):
+                                    weights[k][l][m] = weights[k][l][m] + (learning_rate * inputs[i][m] * deltas[k][l])
+                                else:
+                                    weights_difference = weights[k][l][m] - weights_old[k][l][m]
+                                    print(weights_difference)
+                                    weights_old[k][l][m] = weights[k][l][m]
+                                    weights[k][l][m] = weights[k][l][m] + (learning_rate * inputs[i][m] * deltas[k][l]) + momentum(momentum_term, weights_difference)
 
                         else:
                             for m in range(len(weights[k][l])):
-                                weights[k][l][m] = weights[k][l][m] + (learning_rate * perceptron_sums_active[k-1][m] * deltas[k][l]) # momentum                
-                
+                                weights_difference = weights[k][l][m] - weights_old[k][l][m]
+                                print(weights_difference)
+                                weights_old[k][l][m] = weights[k][l][m]
+                                weights[k][l][m] = weights[k][l][m] + (learning_rate * perceptron_sums_active[k-1][m] * deltas[k][l]) + momentum(momentum_term, weights_difference)            
+
             error_epoch.append(error_mean_sqr)
             
         e = np.mean(error_epoch)
@@ -183,10 +192,12 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
         epoch += 1
         epochs.append(epoch)
         
-        print('______________')
-        print('epoch', epoch)
-        print('epoch error', e)
+    #    print('______________')
+  #      print('epoch', epoch)
+  #      print('epoch error', e)
         
+        # keep the last layers' results
+        results_test = []
         
         # keep the errors
         error_mean_sqr_test = []
@@ -220,21 +231,29 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
                 aux.append(test_tags[i][m] - perceptron_sums_active_test[n_layers-1][m])
 
             error_mean_sqr_test.append(np.mean([e**2 for e in aux]))
+            results_test.append(perceptron_sums_active_test[n_layers-1])
         
-        print('epoch error test', np.mean([e**2 for e in aux]))
+  #      print('epoch error test', np.mean([e**2 for e in aux]))
         error_test.append(np.mean(error_mean_sqr_test))
+        accu.append(accuracy(results_test, answers_test))
+        
         
     # plotting the values
+    plt.subplot(2, 1, 1)
     plt.plot(epochs, error_train, label='train')
     plt.plot(epochs, error_test, label='test')
-    plt.xlabel("Epochs")
-    plt.ylabel("Error epoch")
+    plt.ylabel("Error")
     plt.legend()
+    
+    
+    plt.subplot(2, 1, 2)
+    plt.plot(epochs, accu, label='accuracy')
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
     plt.show()
 
-# test if the weights were well adjusted
-# def test_network(inputs, answers, weights):
-
+    print('WEIGHTS', weights)
+    print('WEIGHTS OLD', weights_old)
 # main function
 if __name__ == "__main__":
     # two hidden layers with 4 perceptrons each
