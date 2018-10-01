@@ -169,13 +169,10 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
                     for l in range(layers[k]):
                         if(k == 0):
                             for m in range(len(weights[k][l])):
-                                if(i == 0 and e == 0):
-                                    weights[k][l][m] = weights[k][l][m] + (learning_rate * inputs[i][m] * deltas[k][l])
-                                else:
-                                    weights_difference = weights[k][l][m] - weights_old[k][l][m]
-                                    print(weights_difference)
-                                    weights_old[k][l][m] = weights[k][l][m]
-                                    weights[k][l][m] = weights[k][l][m] + (learning_rate * inputs[i][m] * deltas[k][l]) + momentum(momentum_term, weights_difference)
+                                weights_difference = weights[k][l][m] - weights_old[k][l][m]
+                                print(weights_difference)
+                                weights_old[k][l][m] = weights[k][l][m]
+                                weights[k][l][m] = weights[k][l][m] + (learning_rate * inputs[i][m] * deltas[k][l]) + momentum(momentum_term, weights_difference)
 
                         else:
                             for m in range(len(weights[k][l])):
