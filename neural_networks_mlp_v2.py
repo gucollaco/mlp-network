@@ -38,7 +38,7 @@ def accuracy(output, expected_output):
 # dataset preparation function
 def dataset(layers):
     # read csv file
-    data = pd.read_csv("iris_dataset.csv", header=None)
+    data = pd.read_csv("dataset_iris.csv", header=None)
 
     # inputs
     values = data.iloc[:, :-1]
