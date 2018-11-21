@@ -14,7 +14,7 @@ from sklearn.model_selection import train_test_split
 
 # activation function (F(y))
 def activation(y):
-    return 1 / (1 + np.exp(-y))
+    return 1 / (1+np.exp(-y))
 
 # activation function (F'(y))
 def activation_derivative(y):
@@ -41,7 +41,7 @@ def dataset(layers):
     data = pd.read_csv("dataset_iris.csv", header=None)
 
     # inputs
-    values = data.iloc[:, :-1]
+    values = data.iloc[:,:-1]
     values["bias"] = 1
     values = values.values
 
@@ -68,15 +68,16 @@ def dataset(layers):
     weights = np.array(weights)
 
     # print matrices
-    #print(values)
+    print(values)
     print(weights)
-    #print(answers)
+    print(answers)
+    print(layers)
 
     # returning inputs, weights, outputs and layers
     return values, weights, answers, layers
 
 # adjust the weights
-def train_network(inputs, answers, inputs_test, answers_test, weights, layers, learning_rate=0.2, momentum_term=0.7, n_epochs=50, acceptable_error=0.1):
+def train_network(inputs, answers, inputs_test, answers_test, weights, layers, learning_rate=0.2, momentum_term=0.7, acceptable_error=0.1): # n_epochs=50, 
     n_inputs = len(inputs)
     n_inputs_test = len(inputs_test)
     n_layers = len(layers)
@@ -95,7 +96,6 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
     
     # iterate while error is too high
     while(e > acceptable_error):
-    #for epoch in range(n_epochs):
 
         error_epoch = []
 
@@ -170,14 +170,12 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
                         if(k == 0):
                             for m in range(len(weights[k][l])):
                                 weights_difference = weights[k][l][m] - weights_old[k][l][m]
-                                print(weights_difference)
                                 weights_old[k][l][m] = weights[k][l][m]
                                 weights[k][l][m] = weights[k][l][m] + (learning_rate * inputs[i][m] * deltas[k][l]) + momentum(momentum_term, weights_difference)
 
                         else:
                             for m in range(len(weights[k][l])):
                                 weights_difference = weights[k][l][m] - weights_old[k][l][m]
-                                print(weights_difference)
                                 weights_old[k][l][m] = weights[k][l][m]
                                 weights[k][l][m] = weights[k][l][m] + (learning_rate * perceptron_sums_active[k-1][m] * deltas[k][l]) + momentum(momentum_term, weights_difference)            
 
@@ -188,10 +186,6 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
         
         epoch += 1
         epochs.append(epoch)
-        
-    #    print('______________')
-  #      print('epoch', epoch)
-  #      print('epoch error', e)
         
         # keep the last layers' results
         results_test = []
@@ -207,7 +201,7 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
 
             for k in range(n_layers):   
                 # first layer
-                if(k == 0):
+                if(k==0):
                     # for each perceptron on the current layer
                     for l in range(layers[k]):
                         perceptron_sums_active_test[k].append(activation(np.dot(inputs_test[i], weights[k][l])))
@@ -230,27 +224,23 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
             error_mean_sqr_test.append(np.mean([e**2 for e in aux]))
             results_test.append(perceptron_sums_active_test[n_layers-1])
         
-  #      print('epoch error test', np.mean([e**2 for e in aux]))
         error_test.append(np.mean(error_mean_sqr_test))
         accu.append(accuracy(results_test, answers_test))
         
         
     # plotting the values
-    plt.subplot(2, 1, 1)
+    plt.subplot(2,1,1)
     plt.plot(epochs, error_train, label='train')
     plt.plot(epochs, error_test, label='test')
     plt.ylabel("Error")
     plt.legend()
     
-    
-    plt.subplot(2, 1, 2)
+    plt.subplot(2,1,2)
     plt.plot(epochs, accu, label='accuracy')
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy")
     plt.show()
 
-    print('WEIGHTS', weights)
-    print('WEIGHTS OLD', weights_old)
 # main function
 if __name__ == "__main__":
     # two hidden layers with 4 perceptrons each
