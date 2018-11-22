@@ -59,7 +59,7 @@ def dataset(layers):
     weights = []
     n_inputs = len(values[0])
     layers.append(n_answers)
-    random.seed(30)
+    
     for i in range(len(layers)):
         if(i==0): aux = [np.array([random.uniform(0, 0.1) for i in range(n_inputs)]) for n in range(layers[i])]
         else: aux = [np.array([random.uniform(0, 0.1) for i in range(layers[i-1]+1)]) for n in range(layers[i])]
@@ -77,7 +77,7 @@ def dataset(layers):
     return values, weights, answers, layers
 
 # adjust the weights
-def train_network(inputs, answers, inputs_test, answers_test, weights, layers, learning_rate=0.2, momentum_term=0.7, acceptable_error=0.1): # n_epochs=50, 
+def train_network(inputs, answers, inputs_test, answers_test, weights, layers, learning_rate=0.3, momentum_term=0.7, acceptable_error=0.1):
     n_inputs = len(inputs)
     n_inputs_test = len(inputs_test)
     n_layers = len(layers)
@@ -125,10 +125,6 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
                     for l in range(layers[k]):
                         perceptron_sums_active[k].append(activation(np.dot(perceptron_sums_active[k-1], weights[k][l]))) # last layer's perceptron sum X weights
                         
-                        if(k==(n_layers-1)):
-                            error_output = answers[i][l] - perceptron_sums_active[k][l]
-                            error_output_train.append(error_output)
-                        
                     if(k!=(n_layers-1)): perceptron_sums_active[k].append(1) # bias
                     
             # updating the weights
@@ -136,7 +132,10 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
                 # output layer
                 if(k==(n_layers-1)):
                     # per perceptron
-                    for l in range(layers[k]):                        
+                    for l in range(layers[k]):
+                        
+                        error_output = answers[i][l] - perceptron_sums_active[k][l]
+                        error_output_train.append(error_output)                   
                         # append to deltas array
                         deltas[k].append((answers[i][l] - perceptron_sums_active[k][l]) * activation_derivative(perceptron_sums_active[k][l]))
 
@@ -186,6 +185,10 @@ def train_network(inputs, answers, inputs_test, answers_test, weights, layers, l
         
         epoch += 1
         epochs.append(epoch)
+        
+        # printing the epochs and the error value
+        print('epoch:', epoch)
+        print('e value:', e)
         
         # keep the last layers' results
         results_test = []
@@ -250,7 +253,7 @@ if __name__ == "__main__":
     values, weights, answers, layers = dataset(n_hidden_perceptron)
 
     # separating values between training and test
-    training_set, test_set, training_tags, test_tags = train_test_split(values, answers, test_size=0.2, random_state=30)
+    training_set, test_set, training_tags, test_tags = train_test_split(values, answers, test_size=0.2)
 
     # train network to adjust the weights
     train_network(training_set, training_tags, test_set, test_tags, weights, layers)
